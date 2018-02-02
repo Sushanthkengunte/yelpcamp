@@ -1,0 +1,14 @@
+
+<% include partials/header %>
+
+<% campGrounds.forEach(function(campGround){ %>
+
+    <div>
+        <h4><%= campGround.name %></h4>
+        <img src="<%= campGround.url %>">
+            
+    </div>
+    
+<% }); %>
+
+<% include partials/footer %>
