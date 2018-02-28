@@ -1,19 +1,19 @@
 var express = require("express"),
     app = express(),
     bodyParser = require("body-parser"),
+    Campground = require("./models/campgrounds"),
+    seedDB = require("./seed"),
+    Comment = require("./models/comment"),
     mongoose = require("mongoose");
     
 mongoose.connect("mongodb://localhost/yelp_camp");
+seedDB();
+app.use(express.static(__dirname+"/public"));
 
 // Scema Setup
 
-var campgroundSchema = mongoose.Schema({
-    name:String,
-    url:String,
-    description:String
-});
 
-var Campground = mongoose.model("Campground",campgroundSchema);
+
 
 // Campground.create( {
 //                 name:"Spiti Valley",
@@ -93,7 +93,7 @@ app.get("/campgrounds",function(req,res){
       if(err){
           console.log(err);
       }else{
-        res.render("index",{campGrounds:allCampgrounds});      
+        res.render("campgrounds/index",{campGrounds:allCampgrounds});      
       }
   });
     
@@ -121,20 +121,53 @@ Campground.create(newCampGround,function(err,campground){
 });
 // NEW - Displays a form to make a new campground
 app.get("/campgrounds/new",function(req, res) {
-   res.render("new"); 
+   res.render("campgrounds/new"); 
 });
 // SHOW - 
 app.get("/campgrounds/:id",function(req, res) {
-    Campground.findById(req.params.id,function(err,foundCampground){
+    // console.log(req.params.id);
+    Campground.findById(req.params.id).populate("comments").exec(function(err,foundCampground){
         if(err){
             console.log("Wrong");
         }else{
-            res.render("show",{campground:foundCampground});
+            
+            res.render("campgrounds/show",{campground:foundCampground});
         }
     })
     
    
 });
+
+app.get("/campgrounds/:id/comments/new",function(req, res) {
+    Campground.findById(req.params.id,function(err,campground){
+        if(err){
+            console.log(err);
+        }else{
+            res.render("comments/new",{campground:campground});
+        }
+    });
+   
+});
+
+app.post("/campgrounds/:id/comments",function(req,res){
+   Campground.findById(req.params.id,function(err, campground) {
+     if (err){
+         console.log(err);
+         res.redirect("/campgrounds");
+     }  else{
+         Comment.create(req.body.comment,function(err,comment){
+            if(err){
+                console.log(err);
+            } else{
+                campground.comments.push(comment);
+                campground.save();
+                res.redirect("/campgrounds/"+campground._id)
+            }
+         });
+     }
+   });
+});
+
 app.listen(process.env.PORT,process.env.IP,function(){
     
    console.log("Start Camping!!"); 
